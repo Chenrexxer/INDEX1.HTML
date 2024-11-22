@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fighting Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+      background: #333;
+      margin: 0 auto;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Score: 0</div>
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Canvas size
+    canvas.width = 800;
+    canvas.height = 400;
+
+    // Player setup
+    const player = {
+      x: 100,
+      y: canvas.height - 120,
+      width: 50,
+      height: 50,
+      color: 'blue',
+      speed: 5,
+      isAttacking: false,
+    };
+
+    // Enemy setup
+    const enemies = [];
+    const enemySpeed = 3;
+    const spawnInterval = 2000; // in ms
+
+    // Score
+    let score = 0;
+
+    // Key states
+    const keys = {};
+
+    // Generate enemies
+    function spawnEnemy() {
+      const enemy = {
+        x: canvas.width,
+        y: canvas.height - 120,
+        width: 50,
+        height: 50,
+        color: 'red',
+        speed: enemySpeed,
+        isHit: false,
+      };
+      enemies.push(enemy);
+    }
+
+    // Draw player
+    function drawPlayer() {
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // Draw attack effect if attacking
+      if (player.isAttacking) {
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(player.x + player.width, player.y, 20, player.height);
+      }
+    }
+
+    // Draw enemies
+    function drawEnemies() {
+      enemies.forEach((enemy, index) => {
+        if (!enemy.isHit) {
+          ctx.fillStyle = enemy.color;
+          ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        }
+      });
+    }
+
+    // Move enemies
+    function moveEnemies() {
+      enemies.forEach((enemy, index) => {
+        enemy.x -= enemy.speed;
+
+        // Remove off-screen enemies
+        if (enemy.x + enemy.width < 0) {
+          enemies.splice(index, 1);
+        }
+      });
+    }
+
+    // Check collisions
+    function checkCollisions() {
+      enemies.forEach((enemy, index) => {
+        if (
+          player.isAttacking &&
+          player.x + player.width >= enemy.x &&
+          player.x <= enemy.x + enemy.width &&
+          player.y === enemy.y
+        ) {
+          // Enemy is hit
+          enemy.isHit = true;
+          enemies.splice(index, 1);
+          score++;
+          document.getElementById('score').innerText = `Score: ${score}`;
+        }
+
+        // Check if enemy collides with player
+        if (
+          player.x < enemy.x + enemy.width &&
+          player.x + player.width > enemy.x &&
+          player.y < enemy.y + enemy.height
+        ) {
+          alert(`Game Over! Final Score: ${score}`);
+          document.location.reload();
+        }
+      });
+    }
+
+    // Game loop
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawPlayer();
+      drawEnemies();
+      moveEnemies();
+      checkCollisions();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Handle key presses
+    document.addEventListener('keydown', (e) => {
+      keys[e.key] = true;
+      if (e.key === ' ') {
+        player.isAttacking = true;
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      keys[e.key] = false;
+      if (e.key === ' ') {
+        player.isAttacking = false;
+      }
+    });
+
+    function updatePlayer() {
+      if (keys['ArrowLeft'] && player.x > 0) {
+        player.x -= player.speed;
+      }
+      if (keys['ArrowRight'] && player.x + player.width < canvas.width) {
+        player.x += player.speed;
+      }
+      if (keys['ArrowUp'] && player.y > canvas.height - 200) {
+        player.y -= player.speed;
+      }
+      if (keys['ArrowDown'] && player.y < canvas.height - 50) {
+        player.y += player.speed;
+      }
+    }
+
+    // Update player position
+    setInterval(updatePlayer, 16);
+
+    // Spawn enemies periodically
+    setInterval(spawnEnemy, spawnInterval);
+
+    // Start game loop
+    gameLoop();
+  </script>
+</body>
+</html>
